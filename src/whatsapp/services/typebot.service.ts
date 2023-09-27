@@ -465,6 +465,9 @@ export class TypebotService {
     sessions.map((session) => {
       if (session.remoteJid === remoteJid) {
         session.updateAt = Date.now();
+        if (session.prefilledVariables && msg && session.prefilledVariables.pushName !== msg.pushName) {
+          session.prefilledVariables.pushName = msg.pushName;
+        }
       }
     });
 
@@ -520,38 +523,21 @@ export class TypebotService {
       return;
     }
 
-    let reqData;
+    const reqData = {
+      message: content,
+      sessionId: session.sessionId.split('-')[1],
+    };
 
-    if (session.prefilledVariables.pushName !== msg.pushName) {
-        reqData = {
-            message: content,
-            sessionId: session.sessionId.split('-')[1],
-            startParams: {
-                typebot: typebot,
-                prefilledVariables: {
-                    remoteJid: remoteJid,
-                    pushName: msg.pushName,
-                    instanceName: instance.instanceName,
-                },
-            },
-        };
-    } else {
-        reqData = {
-            message: content,
-            sessionId: session.sessionId.split('-')[1],
-        };
-    }
-    
     const request = await axios.post(url + '/api/v1/sendMessage', reqData);
-    
+
     await this.sendWAMessage(
-        instance,
-        remoteJid,
-        request.data.messages,
-        request.data.input,
-        request.data.clientSideActions,
+      instance,
+      remoteJid,
+      request.data.messages,
+      request.data.input,
+      request.data.clientSideActions,
     );
-    
+
     return;
   }
 }
